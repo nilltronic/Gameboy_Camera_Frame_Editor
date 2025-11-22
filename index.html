@@ -20,6 +20,58 @@
     const WILDFRAME_SIZE = { width: 160, height: 224 };
     const PHOTO_SIZE = { width: 128, height: 112 };
 
+    // PICO-8 font (4x6 pixels per character, simplified set)
+    const PICO8_FONT = {
+      'A': [[0,1,1,0],[1,0,0,1],[1,1,1,1],[1,0,0,1],[1,0,0,1],[1,0,0,1]],
+      'B': [[1,1,1,0],[1,0,0,1],[1,1,1,0],[1,0,0,1],[1,0,0,1],[1,1,1,0]],
+      'C': [[0,1,1,1],[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[0,1,1,1]],
+      'D': [[1,1,1,0],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,1,1,0]],
+      'E': [[1,1,1,1],[1,0,0,0],[1,1,1,0],[1,0,0,0],[1,0,0,0],[1,1,1,1]],
+      'F': [[1,1,1,1],[1,0,0,0],[1,1,1,0],[1,0,0,0],[1,0,0,0],[1,0,0,0]],
+      'G': [[0,1,1,1],[1,0,0,0],[1,0,1,1],[1,0,0,1],[1,0,0,1],[0,1,1,1]],
+      'H': [[1,0,0,1],[1,0,0,1],[1,1,1,1],[1,0,0,1],[1,0,0,1],[1,0,0,1]],
+      'I': [[1,1,1,0],[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0],[1,1,1,0]],
+      'J': [[0,0,1,1],[0,0,0,1],[0,0,0,1],[0,0,0,1],[1,0,0,1],[0,1,1,0]],
+      'K': [[1,0,0,1],[1,0,1,0],[1,1,0,0],[1,0,1,0],[1,0,0,1],[1,0,0,1]],
+      'L': [[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,1,1,1]],
+      'M': [[1,0,0,1],[1,1,1,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1]],
+      'N': [[1,0,0,1],[1,1,0,1],[1,0,1,1],[1,0,0,1],[1,0,0,1],[1,0,0,1]],
+      'O': [[0,1,1,0],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[0,1,1,0]],
+      'P': [[1,1,1,0],[1,0,0,1],[1,1,1,0],[1,0,0,0],[1,0,0,0],[1,0,0,0]],
+      'Q': [[0,1,1,0],[1,0,0,1],[1,0,0,1],[1,0,1,1],[1,0,0,1],[0,1,1,1]],
+      'R': [[1,1,1,0],[1,0,0,1],[1,1,1,0],[1,0,1,0],[1,0,0,1],[1,0,0,1]],
+      'S': [[0,1,1,1],[1,0,0,0],[0,1,1,0],[0,0,0,1],[0,0,0,1],[1,1,1,0]],
+      'T': [[1,1,1,1],[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]],
+      'U': [[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[0,1,1,0]],
+      'V': [[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[0,1,1,0],[0,1,1,0]],
+      'W': [[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,1,1,1],[1,0,0,1]],
+      'X': [[1,0,0,1],[1,0,0,1],[0,1,1,0],[0,1,1,0],[1,0,0,1],[1,0,0,1]],
+      'Y': [[1,0,0,1],[1,0,0,1],[0,1,1,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]],
+      'Z': [[1,1,1,1],[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0],[1,1,1,1]],
+      '0': [[0,1,1,0],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[0,1,1,0]],
+      '1': [[0,1,0,0],[1,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0],[1,1,1,0]],
+      '2': [[0,1,1,0],[1,0,0,1],[0,0,0,1],[0,1,1,0],[1,0,0,0],[1,1,1,1]],
+      '3': [[1,1,1,0],[0,0,0,1],[0,1,1,0],[0,0,0,1],[0,0,0,1],[1,1,1,0]],
+      '4': [[1,0,0,1],[1,0,0,1],[1,1,1,1],[0,0,0,1],[0,0,0,1],[0,0,0,1]],
+      '5': [[1,1,1,1],[1,0,0,0],[1,1,1,0],[0,0,0,1],[0,0,0,1],[1,1,1,0]],
+      '6': [[0,1,1,0],[1,0,0,0],[1,1,1,0],[1,0,0,1],[1,0,0,1],[0,1,1,0]],
+      '7': [[1,1,1,1],[0,0,0,1],[0,0,1,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]],
+      '8': [[0,1,1,0],[1,0,0,1],[0,1,1,0],[1,0,0,1],[1,0,0,1],[0,1,1,0]],
+      '9': [[0,1,1,0],[1,0,0,1],[1,0,0,1],[0,1,1,1],[0,0,0,1],[0,1,1,0]],
+      ' ': [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+      '!': [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,0,0,0],[0,1,0,0]],
+      '?': [[0,1,1,0],[1,0,0,1],[0,0,1,0],[0,1,0,0],[0,0,0,0],[0,1,0,0]],
+      '.': [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,1,0,0]],
+      ',': [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,1,0,0],[1,0,0,0]],
+      ':': [[0,0,0,0],[0,1,0,0],[0,0,0,0],[0,0,0,0],[0,1,0,0],[0,0,0,0]],
+      '-': [[0,0,0,0],[0,0,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+      '+': [[0,0,0,0],[0,1,0,0],[1,1,1,0],[0,1,0,0],[0,0,0,0],[0,0,0,0]],
+      '=': [[0,0,0,0],[1,1,1,0],[0,0,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
+      '/': [[0,0,0,1],[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0],[1,0,0,0]],
+      '(': [[0,0,1,0],[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,0,1,0]],
+      ')': [[0,1,0,0],[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,1,0,0]],
+    };
+
     // Lucide icons as inline SVGs
     const Icons = {
       Pencil: () => (
@@ -36,6 +88,22 @@
       Square: () => (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect width="18" height="18" x="3" y="3" rx="2"/>
+        </svg>
+      ),
+      Type: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="4 7 4 4 20 4 20 7"/>
+          <line x1="9" x2="15" y1="20" y2="20"/>
+          <line x1="12" x2="12" y1="4" y2="20"/>
+        </svg>
+      ),
+      Grid: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect width="18" height="18" x="3" y="3" rx="2"/>
+          <path d="M3 9h18"/>
+          <path d="M3 15h18"/>
+          <path d="M9 3v18"/>
+          <path d="M15 3v18"/>
         </svg>
       ),
       Undo: () => (
@@ -64,12 +132,19 @@
       const [selectedColor, setSelectedColor] = useState('#000000');
       const [tool, setTool] = useState('pencil');
       const [zoom, setZoom] = useState(3);
+      const [showGrid, setShowGrid] = useState(false);
       const [isDrawing, setIsDrawing] = useState(false);
       const [history, setHistory] = useState([]);
       const [historyIndex, setHistoryIndex] = useState(-1);
+      const [hoverPixel, setHoverPixel] = useState(null);
+      const [textInput, setTextInput] = useState('');
+      const [showTextDialog, setShowTextDialog] = useState(false);
+      const [textPosition, setTextPosition] = useState(null);
       
       const canvasRef = useRef(null);
+      const overlayRef = useRef(null);
       const contextRef = useRef(null);
+      const overlayContextRef = useRef(null);
       const pixelDataRef = useRef(null);
 
       const frameSize = frameType === 'standard' ? STANDARD_SIZE : WILDFRAME_SIZE;
@@ -77,14 +152,21 @@
 
       useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        const overlay = overlayRef.current;
+        if (!canvas || !overlay) return;
 
         canvas.width = frameSize.width;
         canvas.height = frameSize.height;
+        overlay.width = frameSize.width;
+        overlay.height = frameSize.height;
         
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.imageSmoothingEnabled = false;
         contextRef.current = ctx;
+
+        const overlayCtx = overlay.getContext('2d');
+        overlayCtx.imageSmoothingEnabled = false;
+        overlayContextRef.current = overlayCtx;
 
         if (!pixelDataRef.current || 
             pixelDataRef.current.length !== frameSize.width * frameSize.height) {
@@ -95,6 +177,10 @@
 
         redrawCanvas();
       }, [frameType]);
+
+      useEffect(() => {
+        redrawOverlay();
+      }, [hoverPixel, showGrid, zoom, frameSize]);
 
       const saveToHistory = (data) => {
         const newHistory = history.slice(0, historyIndex + 1);
@@ -150,6 +236,40 @@
         );
       };
 
+      const redrawOverlay = () => {
+        const ctx = overlayContextRef.current;
+        if (!ctx) return;
+
+        ctx.clearRect(0, 0, frameSize.width, frameSize.height);
+
+        // Draw grid
+        if (showGrid) {
+          ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+          ctx.lineWidth = 1;
+          
+          for (let x = 0; x <= frameSize.width; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x + 0.5, 0);
+            ctx.lineTo(x + 0.5, frameSize.height);
+            ctx.stroke();
+          }
+          
+          for (let y = 0; y <= frameSize.height; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, y + 0.5);
+            ctx.lineTo(frameSize.width, y + 0.5);
+            ctx.stroke();
+          }
+        }
+
+        // Draw hover pixel indicator
+        if (hoverPixel && tool !== 'fill') {
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(hoverPixel.x + 0.5, hoverPixel.y + 0.5, 1, 1);
+        }
+      };
+
       const getCanvasCoords = (e) => {
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
@@ -180,15 +300,28 @@
       };
 
       const handleMouseDown = (e) => {
+        if (tool === 'text') {
+          const { x, y } = getCanvasCoords(e);
+          setTextPosition({ x, y });
+          setShowTextDialog(true);
+          return;
+        }
+
         const { x, y } = getCanvasCoords(e);
         setIsDrawing(true);
-        drawPixel(x, y);
+        if (tool === 'pencil' || tool === 'eraser') {
+          drawPixel(x, y);
+        }
       };
 
       const handleMouseMove = (e) => {
-        if (!isDrawing) return;
         const { x, y } = getCanvasCoords(e);
-        drawPixel(x, y);
+        setHoverPixel({ x, y });
+
+        if (!isDrawing) return;
+        if (tool === 'pencil' || tool === 'eraser') {
+          drawPixel(x, y);
+        }
       };
 
       const handleMouseUp = () => {
@@ -196,6 +329,11 @@
           setIsDrawing(false);
           saveToHistory(pixelDataRef.current);
         }
+      };
+
+      const handleMouseLeave = () => {
+        setHoverPixel(null);
+        handleMouseUp();
       };
 
       const fillArea = (startX, startY) => {
@@ -227,6 +365,56 @@
 
         redrawCanvas();
         saveToHistory(pixelDataRef.current);
+      };
+
+      const drawText = (text, startX, startY) => {
+        let cursorX = startX;
+        let cursorY = startY;
+
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i].toUpperCase();
+          
+          if (char === '\n') {
+            cursorY += 7;
+            cursorX = startX;
+            continue;
+          }
+
+          const glyph = PICO8_FONT[char];
+          if (!glyph) {
+            cursorX += 5;
+            continue;
+          }
+
+          for (let y = 0; y < glyph.length; y++) {
+            for (let x = 0; x < glyph[y].length; x++) {
+              if (glyph[y][x] === 1) {
+                const px = cursorX + x;
+                const py = cursorY + y;
+                if (px >= 0 && px < frameSize.width && 
+                    py >= 0 && py < frameSize.height &&
+                    !isInPhotoArea(px, py)) {
+                  const idx = py * frameSize.width + px;
+                  pixelDataRef.current[idx] = selectedColor;
+                }
+              }
+            }
+          }
+
+          cursorX += 5;
+        }
+
+        redrawCanvas();
+        saveToHistory(pixelDataRef.current);
+      };
+
+      const handleTextSubmit = () => {
+        if (textInput && textPosition) {
+          drawText(textInput, textPosition.x, textPosition.y);
+          setTextInput('');
+          setShowTextDialog(false);
+          setTextPosition(null);
+        }
       };
 
       const handleCanvasClick = (e) => {
@@ -317,6 +505,16 @@
                     <span>Wildframe (160×224)</span>
                   </label>
                   
+                  <button
+                    onClick={() => setShowGrid(!showGrid)}
+                    className={`px-3 py-1 rounded flex items-center gap-2 ${
+                      showGrid ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                    }`}
+                  >
+                    <Icons.Grid />
+                    <span>Grid</span>
+                  </button>
+                  
                   <div className="ml-auto flex items-center gap-2">
                     <label>Zoom:</label>
                     <input
@@ -331,26 +529,41 @@
                   </div>
                 </div>
 
-                <div className="bg-gray-700 p-4 rounded inline-block">
-                  <canvas
-                    ref={canvasRef}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onClick={handleCanvasClick}
-                    style={{
-                      width: frameSize.width * zoom,
-                      height: frameSize.height * zoom,
-                      imageRendering: 'pixelated',
-                      cursor: tool === 'fill' ? 'crosshair' : 'default',
-                    }}
-                    className="border-2 border-gray-600"
-                  />
+                <div className="bg-gray-700 p-4 rounded inline-block relative">
+                  <div style={{ position: 'relative', width: frameSize.width * zoom, height: frameSize.height * zoom }}>
+                    <canvas
+                      ref={canvasRef}
+                      style={{
+                        position: 'absolute',
+                        width: frameSize.width * zoom,
+                        height: frameSize.height * zoom,
+                        imageRendering: 'pixelated',
+                      }}
+                      className="border-2 border-gray-600"
+                    />
+                    <canvas
+                      ref={overlayRef}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={handleCanvasClick}
+                      style={{
+                        position: 'absolute',
+                        width: frameSize.width * zoom,
+                        height: frameSize.height * zoom,
+                        imageRendering: 'pixelated',
+                        cursor: tool === 'fill' ? 'crosshair' : tool === 'text' ? 'text' : 'crosshair',
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-4 text-sm text-gray-400">
                   <p>Red outline indicates transparent photo area (128×112)</p>
+                  {hoverPixel && (
+                    <p>Position: X:{hoverPixel.x} Y:{hoverPixel.y}</p>
+                  )}
                 </div>
               </div>
 
@@ -384,6 +597,15 @@
                     >
                       <Icons.Square />
                       <span className="text-sm">Fill</span>
+                    </button>
+                    <button
+                      onClick={() => setTool('text')}
+                      className={`p-3 rounded flex items-center justify-center gap-2 ${
+                        tool === 'text' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      <Icons.Type />
+                      <span className="text-sm">Text</span>
                     </button>
                   </div>
                 </div>
@@ -454,10 +676,55 @@
                   <p>• 4-color palette (2-bit)</p>
                   <p>• Photo area: transparent</p>
                   <p>• PNG format for ESP32-S2</p>
+                  <p>• PICO-8 font (4×6 pixels)</p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Text Input Dialog */}
+          {showTextDialog && (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+              onClick={() => setShowTextDialog(false)}
+            >
+              <div 
+                className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold mb-4">Add Text</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Using PICO-8 font (4×6 pixels). Position: X:{textPosition?.x} Y:{textPosition?.y}
+                </p>
+                <textarea
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  placeholder="Enter text (A-Z, 0-9, basic symbols)"
+                  className="w-full p-3 bg-gray-700 rounded text-white border-2 border-gray-600 focus:border-blue-500 outline-none font-mono"
+                  rows="3"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={handleTextSubmit}
+                    className="flex-1 p-2 rounded bg-green-600 hover:bg-green-700"
+                  >
+                    Place Text
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowTextDialog(false);
+                      setTextInput('');
+                      setTextPosition(null);
+                    }}
+                    className="flex-1 p-2 rounded bg-gray-600 hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
