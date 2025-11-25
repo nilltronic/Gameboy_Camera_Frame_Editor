@@ -546,6 +546,10 @@
       const [textInput, setTextInput] = useState('');
       const [showTextDialog, setShowTextDialog] = useState(false);
       const [textPosition, setTextPosition] = useState(null);
+      const [placedTexts, setPlacedTexts] = useState([]);
+      const [selectedTextIndex, setSelectedTextIndex] = useState(null);
+      const [isDraggingText, setIsDraggingText] = useState(false);
+      const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
       
       const canvasRef = useRef(null);
       const overlayRef = useRef(null);
@@ -649,28 +653,27 @@
         ctx.clearRect(0, 0, frameSize.width, frameSize.height);
 
         if (showGrid) {
-          ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+          ctx.strokeStyle = 'rgba(15, 56, 15, 0.4)';
           ctx.lineWidth = 1;
           
           for (let x = 0; x <= frameSize.width; x++) {
             ctx.beginPath();
-            ctx.moveTo(x + 0.5, 0);
-            ctx.lineTo(x + 0.5, frameSize.height);
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, frameSize.height);
             ctx.stroke();
           }
           
           for (let y = 0; y <= frameSize.height; y++) {
             ctx.beginPath();
-            ctx.moveTo(0, y + 0.5);
-            ctx.lineTo(frameSize.width, y + 0.5);
+            ctx.moveTo(0, y);
+            ctx.lineTo(frameSize.width, y);
             ctx.stroke();
           }
         }
 
-        if (hoverPixel && tool !== 'fill') {
-          ctx.strokeStyle = '#00ff00';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(hoverPixel.x + 0.5, hoverPixel.y + 0.5, 1, 1);
+        if (hoverPixel && tool !== 'fill' && tool !== 'text') {
+          ctx.fillStyle = '#00ff00';
+          ctx.fillRect(hoverPixel.x, hoverPixel.y, 1, 1);
         }
       };
 
@@ -704,14 +707,26 @@
       };
 
       const handleMouseDown = (e) => {
+        const { x, y } = getCanvasCoords(e);
+        
         if (tool === 'text') {
-          const { x, y } = getCanvasCoords(e);
+          // Check if clicking on existing text
+          const textIndex = getTextAtPosition(x, y);
+          if (textIndex !== null && e.shiftKey) {
+            // Start dragging existing text with Shift key
+            setSelectedTextIndex(textIndex);
+            setIsDraggingText(true);
+            const text = placedTexts[textIndex];
+            setDragOffset({ x: x - text.x, y: y - text.y });
+            return;
+          }
+          
+          // Place new text
           setTextPosition({ x, y });
           setShowTextDialog(true);
           return;
         }
 
-        const { x, y } = getCanvasCoords(e);
         setIsDrawing(true);
         if (tool === 'pencil' || tool === 'eraser') {
           drawPixel(x, y);
@@ -722,6 +737,13 @@
         const { x, y } = getCanvasCoords(e);
         setHoverPixel({ x, y });
 
+        if (isDraggingText && selectedTextIndex !== null) {
+          const newX = x - dragOffset.x;
+          const newY = y - dragOffset.y;
+          moveText(selectedTextIndex, newX, newY);
+          return;
+        }
+
         if (!isDrawing) return;
         if (tool === 'pencil' || tool === 'eraser') {
           drawPixel(x, y);
@@ -729,6 +751,12 @@
       };
 
       const handleMouseUp = () => {
+        if (isDraggingText) {
+          setIsDraggingText(false);
+          setSelectedTextIndex(null);
+          saveToHistory(pixelDataRef.current);
+        }
+        
         if (isDrawing) {
           setIsDrawing(false);
           saveToHistory(pixelDataRef.current);
@@ -771,9 +799,10 @@
         saveToHistory(pixelDataRef.current);
       };
 
-      const drawText = (text, startX, startY) => {
+      const drawText = (text, startX, startY, persist = true) => {
         let cursorX = startX;
         let cursorY = startY;
+        const drawnPixels = [];
 
         for (let i = 0; i < text.length; i++) {
           const char = text[i].toUpperCase();
@@ -798,6 +827,7 @@
                 if (px >= 0 && px < frameSize.width && 
                     py >= 0 && py < frameSize.height &&
                     !isInPhotoArea(px, py)) {
+                  drawnPixels.push({ x: px, y: py });
                   const idx = py * frameSize.width + px;
                   pixelDataRef.current[idx] = selectedColor;
                 }
@@ -809,7 +839,68 @@
         }
 
         redrawCanvas();
-        saveToHistory(pixelDataRef.current);
+        
+        if (persist) {
+          const textWidth = Math.max(...text.split('\n').map(line => line.length * 5));
+          const textHeight = (text.split('\n').length * 7) - 1;
+          
+          setPlacedTexts([...placedTexts, {
+            text,
+            x: startX,
+            y: startY,
+            width: textWidth,
+            height: textHeight,
+            color: selectedColor,
+            pixels: drawnPixels
+          }]);
+          
+          saveToHistory(pixelDataRef.current);
+        }
+      };
+
+      const clearText = (textObj) => {
+        textObj.pixels.forEach(({ x, y }) => {
+          const idx = y * frameSize.width + x;
+          pixelDataRef.current[idx] = '#ffffff';
+        });
+        redrawCanvas();
+      };
+
+      const moveText = (textIndex, newX, newY) => {
+        const textObj = placedTexts[textIndex];
+        
+        // Clear old text
+        clearText(textObj);
+        
+        // Temporarily set the color to match the text
+        const oldColor = selectedColor;
+        setSelectedColor(textObj.color);
+        
+        // Draw at new position
+        drawText(textObj.text, newX, newY, false);
+        
+        // Restore color
+        setSelectedColor(oldColor);
+        
+        // Update placed texts array
+        const newTexts = [...placedTexts];
+        newTexts[textIndex] = {
+          ...textObj,
+          x: newX,
+          y: newY
+        };
+        setPlacedTexts(newTexts);
+      };
+
+      const getTextAtPosition = (x, y) => {
+        for (let i = placedTexts.length - 1; i >= 0; i--) {
+          const text = placedTexts[i];
+          if (x >= text.x && x < text.x + text.width &&
+              y >= text.y && y < text.y + text.height) {
+            return i;
+          }
+        }
+        return null;
       };
 
       const handleTextSubmit = () => {
@@ -963,6 +1054,7 @@
                 <div className="canvas-info">
                   <p>Red outline = transparent photo area (128×112)</p>
                   {hoverPixel && <p>Position: X:{hoverPixel.x} Y:{hoverPixel.y}</p>}
+                  {tool === 'text' && <p style={{color: '#ff6b6b'}}>SHIFT+CLICK on text to move it</p>}
                 </div>
               </div>
 
