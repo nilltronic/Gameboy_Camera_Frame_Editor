@@ -548,6 +548,7 @@
       const [textPosition, setTextPosition] = useState(null);
       const [placedTexts, setPlacedTexts] = useState([]);
       const [selectedTextIndex, setSelectedTextIndex] = useState(null);
+      const [editingTextIndex, setEditingTextIndex] = useState(null);
       const [isDraggingText, setIsDraggingText] = useState(false);
       const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
       
@@ -590,7 +591,7 @@
 
       useEffect(() => {
         redrawOverlay();
-      }, [hoverPixel, showGrid, zoom, frameSize]);
+      }, [hoverPixel, showGrid, zoom, frameSize, placedTexts, selectedTextIndex]);
 
       const saveToHistory = (data) => {
         const newHistory = history.slice(0, historyIndex + 1);
@@ -652,10 +653,12 @@
 
         ctx.clearRect(0, 0, frameSize.width, frameSize.height);
 
+        // Draw grid
         if (showGrid) {
-          ctx.strokeStyle = 'rgba(15, 56, 15, 0.4)';
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = '#0f380f';
+          ctx.lineWidth = 0.5;
           
+          // Vertical lines
           for (let x = 0; x <= frameSize.width; x++) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
@@ -663,6 +666,7 @@
             ctx.stroke();
           }
           
+          // Horizontal lines
           for (let y = 0; y <= frameSize.height; y++) {
             ctx.beginPath();
             ctx.moveTo(0, y);
@@ -671,7 +675,18 @@
           }
         }
 
-        if (hoverPixel && tool !== 'fill' && tool !== 'text') {
+        // Draw text selection boxes
+        if (tool === 'text' && placedTexts.length > 0) {
+          placedTexts.forEach((textObj, index) => {
+            const isSelected = index === selectedTextIndex;
+            ctx.strokeStyle = isSelected ? '#00ff00' : '#ffff00';
+            ctx.lineWidth = isSelected ? 2 : 1;
+            ctx.strokeRect(textObj.x - 1, textObj.y - 1, textObj.width + 2, textObj.height + 2);
+          });
+        }
+
+        // Draw hover indicator for pencil/eraser
+        if (hoverPixel && (tool === 'pencil' || tool === 'eraser')) {
           ctx.fillStyle = '#00ff00';
           ctx.fillRect(hoverPixel.x, hoverPixel.y, 1, 1);
         }
@@ -711,18 +726,23 @@
         
         if (tool === 'text') {
           // Check if clicking on existing text
-          const textIndex = getTextAtPosition(x, y);
-          if (textIndex !== null && e.shiftKey) {
-            // Start dragging existing text with Shift key
-            setSelectedTextIndex(textIndex);
-            setIsDraggingText(true);
-            const text = placedTexts[textIndex];
-            setDragOffset({ x: x - text.x, y: y - text.y });
-            return;
+          for (let i = placedTexts.length - 1; i >= 0; i--) {
+            const text = placedTexts[i];
+            if (x >= text.x && x < text.x + text.width &&
+                y >= text.y && y < text.y + text.height) {
+              setSelectedTextIndex(i);
+              setEditingTextIndex(i);
+              setTextInput(text.text);
+              setShowTextDialog(true);
+              return;
+            }
           }
           
           // Place new text
+          setSelectedTextIndex(null);
+          setEditingTextIndex(null);
           setTextPosition({ x, y });
+          setTextInput('');
           setShowTextDialog(true);
           return;
         }
@@ -737,13 +757,6 @@
         const { x, y } = getCanvasCoords(e);
         setHoverPixel({ x, y });
 
-        if (isDraggingText && selectedTextIndex !== null) {
-          const newX = x - dragOffset.x;
-          const newY = y - dragOffset.y;
-          moveText(selectedTextIndex, newX, newY);
-          return;
-        }
-
         if (!isDrawing) return;
         if (tool === 'pencil' || tool === 'eraser') {
           drawPixel(x, y);
@@ -751,12 +764,6 @@
       };
 
       const handleMouseUp = () => {
-        if (isDraggingText) {
-          setIsDraggingText(false);
-          setSelectedTextIndex(null);
-          saveToHistory(pixelDataRef.current);
-        }
-        
         if (isDrawing) {
           setIsDrawing(false);
           saveToHistory(pixelDataRef.current);
@@ -799,15 +806,19 @@
         saveToHistory(pixelDataRef.current);
       };
 
-      const drawText = (text, startX, startY, persist = true) => {
+      const drawText = (text, startX, startY, color, persist = true) => {
         let cursorX = startX;
         let cursorY = startY;
         const drawnPixels = [];
+        let maxWidth = 0;
+        let lineWidth = 0;
 
         for (let i = 0; i < text.length; i++) {
           const char = text[i].toUpperCase();
           
           if (char === '\n') {
+            maxWidth = Math.max(maxWidth, lineWidth);
+            lineWidth = 0;
             cursorY += 7;
             cursorX = startX;
             continue;
@@ -815,6 +826,7 @@
 
           const glyph = PICO8_FONT[char];
           if (!glyph) {
+            lineWidth += 5;
             cursorX += 5;
             continue;
           }
@@ -829,86 +841,120 @@
                     !isInPhotoArea(px, py)) {
                   drawnPixels.push({ x: px, y: py });
                   const idx = py * frameSize.width + px;
-                  pixelDataRef.current[idx] = selectedColor;
+                  pixelDataRef.current[idx] = color;
                 }
               }
             }
           }
 
+          lineWidth += 5;
           cursorX += 5;
         }
 
-        redrawCanvas();
-        
+        maxWidth = Math.max(maxWidth, lineWidth);
+        const textHeight = (text.split('\n').length * 7) - 1;
+
         if (persist) {
-          const textWidth = Math.max(...text.split('\n').map(line => line.length * 5));
-          const textHeight = (text.split('\n').length * 7) - 1;
-          
-          setPlacedTexts([...placedTexts, {
+          return {
             text,
             x: startX,
             y: startY,
-            width: textWidth,
+            width: maxWidth,
             height: textHeight,
-            color: selectedColor,
+            color: color,
             pixels: drawnPixels
-          }]);
-          
-          saveToHistory(pixelDataRef.current);
+          };
         }
       };
 
-      const clearText = (textObj) => {
+      const renderAllTexts = () => {
+        // Clear all text pixels first
+        placedTexts.forEach(textObj => {
+          textObj.pixels.forEach(({ x, y }) => {
+            const idx = y * frameSize.width + x;
+            pixelDataRef.current[idx] = '#ffffff';
+          });
+        });
+
+        // Redraw all texts
+        const newTexts = placedTexts.map(textObj => {
+          return drawText(textObj.text, textObj.x, textObj.y, textObj.color, true);
+        });
+
+        setPlacedTexts(newTexts);
+        redrawCanvas();
+      };
+
+      const updateText = (index, updates) => {
+        const newTexts = [...placedTexts];
+        const oldText = newTexts[index];
+        
+        // Clear old text pixels
+        oldText.pixels.forEach(({ x, y }) => {
+          const idx = y * frameSize.width + x;
+          pixelDataRef.current[idx] = '#ffffff';
+        });
+
+        // Create updated text object
+        const updatedText = drawText(
+          updates.text !== undefined ? updates.text : oldText.text,
+          updates.x !== undefined ? updates.x : oldText.x,
+          updates.y !== undefined ? updates.y : oldText.y,
+          updates.color !== undefined ? updates.color : oldText.color,
+          true
+        );
+
+        newTexts[index] = updatedText;
+        setPlacedTexts(newTexts);
+        redrawCanvas();
+      };
+
+      const deleteText = (index) => {
+        const textObj = placedTexts[index];
+        
+        // Clear text pixels
         textObj.pixels.forEach(({ x, y }) => {
           const idx = y * frameSize.width + x;
           pixelDataRef.current[idx] = '#ffffff';
         });
-        redrawCanvas();
-      };
 
-      const moveText = (textIndex, newX, newY) => {
-        const textObj = placedTexts[textIndex];
-        
-        // Clear old text
-        clearText(textObj);
-        
-        // Temporarily set the color to match the text
-        const oldColor = selectedColor;
-        setSelectedColor(textObj.color);
-        
-        // Draw at new position
-        drawText(textObj.text, newX, newY, false);
-        
-        // Restore color
-        setSelectedColor(oldColor);
-        
-        // Update placed texts array
-        const newTexts = [...placedTexts];
-        newTexts[textIndex] = {
-          ...textObj,
-          x: newX,
-          y: newY
-        };
+        const newTexts = placedTexts.filter((_, i) => i !== index);
         setPlacedTexts(newTexts);
-      };
-
-      const getTextAtPosition = (x, y) => {
-        for (let i = placedTexts.length - 1; i >= 0; i--) {
-          const text = placedTexts[i];
-          if (x >= text.x && x < text.x + text.width &&
-              y >= text.y && y < text.y + text.height) {
-            return i;
-          }
-        }
-        return null;
+        setSelectedTextIndex(null);
+        redrawCanvas();
+        saveToHistory(pixelDataRef.current);
       };
 
       const handleTextSubmit = () => {
-        if (textInput && textPosition) {
-          drawText(textInput, textPosition.x, textPosition.y);
-          setTextInput('');
+        if (!textInput) return;
+        
+        if (editingTextIndex !== null) {
+          // Update existing text
+          updateText(editingTextIndex, { 
+            text: textInput,
+            color: selectedColor 
+          });
+          setEditingTextIndex(null);
+        } else if (textPosition) {
+          // Add new text
+          const newText = drawText(textInput, textPosition.x, textPosition.y, selectedColor, true);
+          setPlacedTexts([...placedTexts, newText]);
+          redrawCanvas();
+        }
+        
+        setTextInput('');
+        setShowTextDialog(false);
+        setTextPosition(null);
+        setSelectedTextIndex(null);
+        saveToHistory(pixelDataRef.current);
+      };
+
+      const handleTextDelete = () => {
+        if (editingTextIndex !== null) {
+          deleteText(editingTextIndex);
           setShowTextDialog(false);
-          setTextPosition(null);
+          setTextInput('');
+          setEditingTextIndex(null);
         }
       };
 
@@ -1054,7 +1100,7 @@
                 <div className="canvas-info">
                   <p>Red outline = transparent photo area (128×112)</p>
                   {hoverPixel && <p>Position: X:{hoverPixel.x} Y:{hoverPixel.y}</p>}
-                  {tool === 'text' && <p style={{color: '#ff6b6b'}}>SHIFT+CLICK on text to move it</p>}
+                  {tool === 'text' && <p style={{color: '#9bbc0f', background: '#306230', padding: '5px', marginTop: '5px'}}>CLICK on text to edit/move • CLICK empty space to add new</p>}
                 </div>
               </div>
 
@@ -1158,12 +1204,21 @@
           </div>
 
           {showTextDialog && (
-            <div className="text-dialog-overlay" onClick={() => setShowTextDialog(false)}>
+            <div className="text-dialog-overlay" onClick={() => {
+              setShowTextDialog(false);
+              setTextInput('');
+              setEditingTextIndex(null);
+              setTextPosition(null);
+            }}>
               <div className="text-dialog" onClick={(e) => e.stopPropagation()}>
-                <h3>ADD TEXT</h3>
+                <h3>{editingTextIndex !== null ? 'EDIT TEXT' : 'ADD TEXT'}</h3>
                 <p>
                   Using PICO-8 font (4×6 pixels)<br/>
-                  Position: X:{textPosition?.x} Y:{textPosition?.y}
+                  {editingTextIndex !== null ? (
+                    <>Position: X:{placedTexts[editingTextIndex]?.x} Y:{placedTexts[editingTextIndex]?.y}</>
+                  ) : (
+                    <>Position: X:{textPosition?.x} Y:{textPosition?.y}</>
+                  )}
                 </p>
                 <textarea
                   value={textInput}
@@ -1172,14 +1227,40 @@
                   rows="3"
                   autoFocus
                 />
+                
+                {editingTextIndex !== null && (
+                  <div style={{marginTop: '15px'}}>
+                    <label style={{display: 'block', marginBottom: '10px', fontWeight: 700, color: '#0f380f'}}>
+                      TEXT COLOR:
+                    </label>
+                    <div className="palette-grid">
+                      {COLORS.map((color) => (
+                        <button
+                          key={color}
+                          className={`color-btn ${selectedColor === color ? 'active' : ''}`}
+                          onClick={() => setSelectedColor(color)}
+                          style={{ backgroundColor: color, height: '40px' }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="dialog-actions">
                   <button onClick={handleTextSubmit} className="action-btn btn-success">
-                    PLACE TEXT
+                    {editingTextIndex !== null ? 'UPDATE' : 'PLACE TEXT'}
                   </button>
+                  {editingTextIndex !== null && (
+                    <button onClick={handleTextDelete} className="action-btn btn-danger">
+                      DELETE
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowTextDialog(false);
                       setTextInput('');
+                      setEditingTextIndex(null);
                       setTextPosition(null);
                     }}
                     className="action-btn btn-primary"
