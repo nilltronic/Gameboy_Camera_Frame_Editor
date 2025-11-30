@@ -549,8 +549,8 @@
       const [placedTexts, setPlacedTexts] = useState([]);
       const [selectedTextIndex, setSelectedTextIndex] = useState(null);
       const [editingTextIndex, setEditingTextIndex] = useState(null);
-      const [isDraggingText, setIsDraggingText] = useState(false);
-      const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+      const [textMoveX, setTextMoveX] = useState('');
+      const [textMoveY, setTextMoveY] = useState('');
       
       const canvasRef = useRef(null);
       const overlayRef = useRef(null);
@@ -653,26 +653,24 @@
 
         ctx.clearRect(0, 0, frameSize.width, frameSize.height);
 
-        // Draw grid
+        // Draw grid - must be drawn at actual pixel coordinates
         if (showGrid) {
           ctx.strokeStyle = '#0f380f';
-          ctx.lineWidth = 0.5;
+          ctx.lineWidth = 1;
           
+          ctx.beginPath();
           // Vertical lines
           for (let x = 0; x <= frameSize.width; x++) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, frameSize.height);
-            ctx.stroke();
+            ctx.moveTo(x + 0.5, 0);
+            ctx.lineTo(x + 0.5, frameSize.height);
           }
           
           // Horizontal lines
           for (let y = 0; y <= frameSize.height; y++) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(frameSize.width, y);
-            ctx.stroke();
+            ctx.moveTo(0, y + 0.5);
+            ctx.lineTo(frameSize.width, y + 0.5);
           }
+          ctx.stroke();
         }
 
         // Draw text selection boxes
@@ -733,6 +731,8 @@
               setSelectedTextIndex(i);
               setEditingTextIndex(i);
               setTextInput(text.text);
+              setTextMoveX(text.x.toString());
+              setTextMoveY(text.y.toString());
               setShowTextDialog(true);
               return;
             }
@@ -743,6 +743,8 @@
           setEditingTextIndex(null);
           setTextPosition({ x, y });
           setTextInput('');
+          setTextMoveX('');
+          setTextMoveY('');
           setShowTextDialog(true);
           return;
         }
@@ -929,10 +931,16 @@
         if (!textInput) return;
         
         if (editingTextIndex !== null) {
+          // Get new position if provided
+          const newX = textMoveX !== '' ? parseInt(textMoveX) : placedTexts[editingTextIndex].x;
+          const newY = textMoveY !== '' ? parseInt(textMoveY) : placedTexts[editingTextIndex].y;
+          
           // Update existing text
           updateText(editingTextIndex, { 
             text: textInput,
-            color: selectedColor 
+            color: selectedColor,
+            x: newX,
+            y: newY
           });
           setEditingTextIndex(null);
         } else if (textPosition) {
@@ -943,6 +951,8 @@
         }
         
         setTextInput('');
+        setTextMoveX('');
+        setTextMoveY('');
         setShowTextDialog(false);
         setTextPosition(null);
         setSelectedTextIndex(null);
@@ -985,12 +995,13 @@
             const idx = y * frameSize.width + x;
             const pixelIdx = idx * 4;
             
+            // Check if in photo area - make transparent
             if (x >= photoPosition.x && x < photoPosition.x + PHOTO_SIZE.width &&
                 y >= photoPosition.y && y < photoPosition.y + PHOTO_SIZE.height) {
               imageData.data[pixelIdx] = 0;
               imageData.data[pixelIdx + 1] = 0;
               imageData.data[pixelIdx + 2] = 0;
-              imageData.data[pixelIdx + 3] = 0;
+              imageData.data[pixelIdx + 3] = 0; // Transparent alpha
             } else {
               const color = pixelDataRef.current[idx];
               const value = parseInt(color.slice(1), 16);
@@ -1001,7 +1012,7 @@
               imageData.data[pixelIdx] = r;
               imageData.data[pixelIdx + 1] = g;
               imageData.data[pixelIdx + 2] = b;
-              imageData.data[pixelIdx + 3] = 255;
+              imageData.data[pixelIdx + 3] = 255; // Opaque
             }
           }
         }
@@ -1229,22 +1240,62 @@
                 />
                 
                 {editingTextIndex !== null && (
-                  <div style={{marginTop: '15px'}}>
-                    <label style={{display: 'block', marginBottom: '10px', fontWeight: 700, color: '#0f380f'}}>
-                      TEXT COLOR:
-                    </label>
-                    <div className="palette-grid">
-                      {COLORS.map((color) => (
-                        <button
-                          key={color}
-                          className={`color-btn ${selectedColor === color ? 'active' : ''}`}
-                          onClick={() => setSelectedColor(color)}
-                          style={{ backgroundColor: color, height: '40px' }}
-                          title={color}
+                  <>
+                    <div style={{marginTop: '15px'}}>
+                      <label style={{display: 'block', marginBottom: '10px', fontWeight: 700, color: '#0f380f'}}>
+                        MOVE TEXT (X, Y):
+                      </label>
+                      <div style={{display: 'flex', gap: '10px'}}>
+                        <input
+                          type="number"
+                          value={textMoveX}
+                          onChange={(e) => setTextMoveX(e.target.value)}
+                          placeholder="X"
+                          style={{
+                            flex: 1,
+                            padding: '8px',
+                            background: '#9bbc0f',
+                            border: '3px solid #0f380f',
+                            color: '#0f380f',
+                            fontFamily: 'Courier New, monospace',
+                            fontSize: '14px'
+                          }}
                         />
-                      ))}
+                        <input
+                          type="number"
+                          value={textMoveY}
+                          onChange={(e) => setTextMoveY(e.target.value)}
+                          placeholder="Y"
+                          style={{
+                            flex: 1,
+                            padding: '8px',
+                            background: '#9bbc0f',
+                            border: '3px solid #0f380f',
+                            color: '#0f380f',
+                            fontFamily: 'Courier New, monospace',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
+                    
+                    <div style={{marginTop: '15px'}}>
+                      <label style={{display: 'block', marginBottom: '10px', fontWeight: 700, color: '#0f380f'}}>
+                        TEXT COLOR:
+                      </label>
+                      <div className="palette-grid">
+                        {COLORS.map((color) => (
+                          <button
+                            key={color}
+                            className={`color-btn ${selectedColor === color ? 'active' : ''}`}
+                            onClick={() => setSelectedColor(color)}
+                            style={{ backgroundColor: color, height: '40px' }}
+                            title={color}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
                 
                 <div className="dialog-actions">
@@ -1260,6 +1311,8 @@
                     onClick={() => {
                       setShowTextDialog(false);
                       setTextInput('');
+                      setTextMoveX('');
+                      setTextMoveY('');
                       setEditingTextIndex(null);
                       setTextPosition(null);
                     }}
