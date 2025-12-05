@@ -1,4 +1,3 @@
 https://nilltronic.github.io/Gameboy_Camera_Frame_Editor/
-need to fix:
-png is not transparent.
+need to fix.
 Grid not visible.
