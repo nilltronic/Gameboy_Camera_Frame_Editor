@@ -575,7 +575,7 @@
         ctx.imageSmoothingEnabled = false;
         contextRef.current = ctx;
 
-        const overlayCtx = overlay.getContext('2d');
+        const overlayCtx = overlay.getContext('2d', { alpha: true });
         overlayCtx.imageSmoothingEnabled = false;
         overlayContextRef.current = overlayCtx;
 
@@ -651,42 +651,49 @@
         const ctx = overlayContextRef.current;
         if (!ctx) return;
 
+        // Always clear with full transparency
         ctx.clearRect(0, 0, frameSize.width, frameSize.height);
 
-        // Draw grid - must be drawn at actual pixel coordinates
+        // Draw grid with thin lines
         if (showGrid) {
-          ctx.strokeStyle = '#0f380f';
-          ctx.lineWidth = 1;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(15, 56, 15, 0.5)';
+          ctx.lineWidth = 0.5;
           
           ctx.beginPath();
-          // Vertical lines
+          // Draw all vertical lines
           for (let x = 0; x <= frameSize.width; x++) {
             ctx.moveTo(x + 0.5, 0);
             ctx.lineTo(x + 0.5, frameSize.height);
           }
           
-          // Horizontal lines
+          // Draw all horizontal lines
           for (let y = 0; y <= frameSize.height; y++) {
             ctx.moveTo(0, y + 0.5);
             ctx.lineTo(frameSize.width, y + 0.5);
           }
           ctx.stroke();
+          ctx.restore();
         }
 
         // Draw text selection boxes
         if (tool === 'text' && placedTexts.length > 0) {
+          ctx.save();
           placedTexts.forEach((textObj, index) => {
             const isSelected = index === selectedTextIndex;
             ctx.strokeStyle = isSelected ? '#00ff00' : '#ffff00';
             ctx.lineWidth = isSelected ? 2 : 1;
             ctx.strokeRect(textObj.x - 1, textObj.y - 1, textObj.width + 2, textObj.height + 2);
           });
+          ctx.restore();
         }
 
         // Draw hover indicator for pencil/eraser
         if (hoverPixel && (tool === 'pencil' || tool === 'eraser')) {
+          ctx.save();
           ctx.fillStyle = '#00ff00';
           ctx.fillRect(hoverPixel.x, hoverPixel.y, 1, 1);
+          ctx.restore();
         }
       };
 
