@@ -654,28 +654,27 @@
         // Always clear with full transparency
         ctx.clearRect(0, 0, frameSize.width, frameSize.height);
 
-        // Draw grid with thin lines
-        if (showGrid) {
+        // Draw grid - only visible at higher zoom levels
+        if (showGrid && zoom >= 2) {
           ctx.save();
-          ctx.strokeStyle = 'rgba(15, 56, 15, 0.5)';
-          ctx.lineWidth = 0.5;
+          ctx.strokeStyle = 'rgba(15, 56, 15, 0.3)';
+          ctx.lineWidth = 1 / zoom; // Scale line width inversely with zoom
           
           ctx.beginPath();
-          // Draw all vertical lines
+          // Draw vertical lines between pixels
           for (let x = 0; x <= frameSize.width; x++) {
-            ctx.moveTo(x + 0.5, 0);
-            ctx.lineTo(x + 0.5, frameSize.height);
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, frameSize.height);
           }
           
-          // Draw all horizontal lines
+          // Draw horizontal lines between pixels
           for (let y = 0; y <= frameSize.height; y++) {
-            ctx.moveTo(0, y + 0.5);
-            ctx.lineTo(frameSize.width, y + 0.5);
+            ctx.moveTo(0, y);
+            ctx.lineTo(frameSize.width, y);
           }
           ctx.stroke();
           ctx.restore();
         }
-
         // Draw text selection boxes
         if (tool === 'text' && placedTexts.length > 0) {
           ctx.save();
