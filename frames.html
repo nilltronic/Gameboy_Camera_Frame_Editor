@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Original Frames</title>
+<style>
+  body {
+    font-family: monospace;
+    background: #9bbc0f;   /* matches the printer's own GB-green palette */
+    color: #0f380f;
+    margin: 0;
+    padding: 24px 16px 60px;
+  }
+  h1 {
+    text-align: center;
+    margin: 0 0 6px;
+  }
+  p.sub {
+    text-align: center;
+    max-width: 560px;
+    margin: 0 auto 28px;
+    line-height: 1.5;
+  }
+  #status {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #8bac0f;
+    border: 2px solid #0f380f;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .card img {
+    width: 100%;
+    max-width: 128px;
+    image-rendering: pixelated;
+    background: #fff;
+    border: 1px solid #0f380f;
+    margin-bottom: 8px;
+  }
+  .card .name {
+    font-size: 11px;
+    word-break: break-all;
+    margin-bottom: 8px;
+    flex-grow: 1;
+  }
+  .card a.download {
+    display: inline-block;
+    font-size: 12px;
+    padding: 6px 10px;
+    background: #0f380f;
+    color: #9bbc0f;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+  .card a.download:hover {
+    opacity: 0.85;
+  }
+  a.back {
+    display: block;
+    text-align: center;
+    margin-top: 32px;
+    color: #0f380f;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Original Frames</h1>
+  <p class="sub">
+    These are the stock frames that used to ship on the printer itself.
+    Download any you like, then use the <strong>Upload custom frame</strong>
+    button on the printer's own page to add it back.
+  </p>
+
+  <div id="status">Loading frames&hellip;</div>
+  <div id="grid" class="grid"></div>
+
+  <a class="back" href="index.html">&larr; Back to the frame editor</a>
+
+<script>
+  // ------------------------------------------------------------------
+  // Set this to "your-github-username/your-repo-name" — the repo that
+  // has a "frames" folder at its root (or update FRAMES_PATH below if
+  // it lives somewhere else in the repo).
+  // ------------------------------------------------------------------
+  var REPO = "YOUR_USERNAME/YOUR_REPO";
+  var FRAMES_PATH = "frames";
+
+  var statusEl = document.getElementById('status');
+  var gridEl = document.getElementById('grid');
+
+  fetch('https://api.github.com/repos/' + REPO + '/contents/' + FRAMES_PATH)
+    .then(function(res) {
+      if (!res.ok) throw new Error('GitHub API returned ' + res.status);
+      return res.json();
+    })
+    .then(function(files) {
+      var images = files.filter(function(f) {
+        return f.type === 'file' && /\.png$/i.test(f.name);
+      });
+
+      if (images.length === 0) {
+        statusEl.textContent = 'No frames found in "' + FRAMES_PATH + '".';
+        return;
+      }
+
+      // Alphabetical, so the order is stable and predictable
+      images.sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+      images.forEach(function(file) {
+        var card = document.createElement('div');
+        card.className = 'card';
+
+        var img = document.createElement('img');
+        img.src = file.download_url;
+        img.alt = file.name;
+        img.loading = 'lazy';
+
+        var name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = file.name;
+
+        var link = document.createElement('a');
+        link.className = 'download';
+        link.href = file.download_url;
+        link.download = file.name;
+        link.textContent = 'Download';
+
+        card.appendChild(img);
+        card.appendChild(name);
+        card.appendChild(link);
+        gridEl.appendChild(card);
+      });
+
+      statusEl.textContent = images.length + ' frame' + (images.length === 1 ? '' : 's') + ' available';
+    })
+    .catch(function(err) {
+      statusEl.textContent = 'Could not load the frame list (' + err.message + '). ' +
+        'Double-check the REPO/FRAMES_PATH values at the top of this page\u2019s script.';
+    });
+</script>
+
+</body>
+</html>
