@@ -160,6 +160,19 @@
       border: 3px solid #0f380f;
       display: inline-block;
       position: relative;
+      max-width: 100%;
+      max-height: 80vh;
+      overflow: auto;   /* zoomed canvas can exceed the viewport — scroll rather than overflow the page */
+    }
+
+    .pixel-grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(to right, rgba(15, 56, 15, 0.3) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15, 56, 15, 0.3) 1px, transparent 1px);
     }
 
     .canvas-container {
@@ -668,27 +681,10 @@
         // Always clear with full transparency
         ctx.clearRect(0, 0, frameSize.width, frameSize.height);
 
-        // Draw grid - only visible at higher zoom levels
-        if (showGrid && zoom >= 2) {
-          ctx.save();
-          ctx.strokeStyle = 'rgba(15, 56, 15, 0.3)';
-          ctx.lineWidth = 1 / zoom; // Scale line width inversely with zoom
-          
-          ctx.beginPath();
-          // Draw vertical lines between pixels
-          for (let x = 0; x <= frameSize.width; x++) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, frameSize.height);
-          }
-          
-          // Draw horizontal lines between pixels
-          for (let y = 0; y <= frameSize.height; y++) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(frameSize.width, y);
-          }
-          ctx.stroke();
-          ctx.restore();
-        }
+        // Grid is now drawn as a separate CSS layer (see .pixel-grid-overlay
+        // in the JSX below) — it's always crisp at any zoom, since it's not
+        // rasterized into this same low-resolution native canvas buffer.
+
         // Draw text selection boxes
         if (tool === 'text' && placedTexts.length > 0) {
           ctx.save();
@@ -1087,7 +1083,7 @@
                     <input
                       type="range"
                       min="1"
-                      max="5"
+                      max="10"
                       value={zoom}
                       onChange={(e) => setZoom(Number(e.target.value))}
                       className="zoom-slider"
@@ -1126,6 +1122,16 @@
                         cursor: tool === 'fill' ? 'crosshair' : tool === 'text' ? 'text' : 'crosshair',
                       }}
                     />
+                    {showGrid && zoom >= 2 && (
+                      <div
+                        className="pixel-grid-overlay"
+                        style={{
+                          width: frameSize.width * zoom,
+                          height: frameSize.height * zoom,
+                          backgroundSize: `${zoom}px ${zoom}px`,
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
 
