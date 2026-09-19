@@ -23,7 +23,7 @@ jobs:
       - name: Download and save image
         id: fetch
         run: |
-          IMAGE_URL=$(echo '${{ steps.parse.outputs.issueparser_image }}' | grep -oP '(?<=\()https://[^\)]+')
+          IMAGE_URL=$(echo '${{ steps.parse.outputs.issueparser_image }}' | grep -oP '(?<=src=")https://[^"]+')
           FILENAME="gallery/images/$(date +%s)-${{ github.event.issue.number }}.png"
           mkdir -p gallery/images
           curl -sL "$IMAGE_URL" -o "$FILENAME"
