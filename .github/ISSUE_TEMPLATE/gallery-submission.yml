@@ -1,7 +1,6 @@
 name: Gallery Submission
 description: Share a Game Boy Camera photo or frame with the gallery
 title: "[Gallery] "
-labels: ["gallery-submission"]
 body:
   - type: markdown
     attributes:
