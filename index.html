@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Boy Camera Printer</title>
+<style>
+body {
+  font-family: monospace;
+  background: #9bbc0f;
+  color: #0f380f;
+  margin: 0;
+  padding: 24px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h1 {
+  text-align: center;
+  margin: 0 0 6px;
+}
+p.sub {
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto 32px;
+  line-height: 1.5;
+}
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 360px;
+}
+.menu a {
+  display: block;
+  background: #8bac0f;
+  border: 2px solid #0f380f;
+  border-radius: 6px;
+  padding: 16px 18px;
+  color: #0f380f;
+  text-decoration: none;
+}
+.menu a:hover {
+  background: #0f380f;
+  color: #9bbc0f;
+}
+.menu .label {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.menu .desc {
+  font-size: 12px;
+  line-height: 1.4;
+}
+footer {
+  margin-top: 40px;
+  font-size: 11px;
+  text-align: center;
+  max-width: 400px;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<h1>Game Boy Camera Printer</h1>
+<p class="sub">Everything for the WiFi printer in one place — design a frame, browse what others have made, or catch up on how it all works.</p>
+
+<div class="menu">
+  <a href="editor.html">
+    <div class="label">Frame Editor</div>
+    <div class="desc">Design your own custom frame to print with, pixel by pixel.</div>
+  </a>
+
+  <a href="frames.html">
+    <div class="label">Frame Library</div>
+    <div class="desc">Browse ready-made frames you can use straight away.</div>
+  </a>
+
+  <a href="gallery.html">
+    <div class="label">Gallery</div>
+    <div class="desc">See photos and frames shared by other printer owners.</div>
+  </a>
+
+  <a href="https://github.com/nilltronic/Gameboy_Camera_Frame_Editor/issues/new?template=gallery-submission.yml">
+    <div class="label">Submit to the Gallery</div>
+    <div class="desc">Share one of your own photos or frames (requires a GitHub account).</div>
+  </a>
+
+  <a href="instructions.html">
+    <div class="label">Instructions</div>
+    <div class="desc">How to set up and use the printer.</div>
+  </a>
+</div>
+
+<footer>
+  Game Boy Camera WiFi Printer project by nilltronic.
+</footer>
+
+</body>
+</html>
